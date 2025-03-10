@@ -216,7 +216,7 @@ struct HorizontalSectionView: View {
     func fetchData() {
         let apiKey = "2cbd04c2dac25629f413b3b7d5feef97"
         let categories: [String]
-        
+
         if category == "all_movies" {
             categories = ["movie/popular", "movie/now_playing", "movie/top_rated", "movie/upcoming", "trending/movie/week"]
         } else if category == "all_tv" {
@@ -224,36 +224,37 @@ struct HorizontalSectionView: View {
         } else {
             categories = [category]
         }
-        
+
         var fetchedItems = Set<Movie>()
         let dispatchGroup = DispatchGroup()
-        
+
         for cat in categories {
-            let urlString = "https://api.themoviedb.org/3/\(cat)?api_key=\(apiKey)&language=en-US&page=1"
-            guard let url = URL(string: urlString) else { continue }
-            
-            dispatchGroup.enter()
-            URLSession.shared.dataTask(with: url) { data, response, error in
-                defer { dispatchGroup.leave() }
-                
-                if let data = data {
-                    do {
-                        let decodedResponse = try JSONDecoder().decode(MovieResponse.self, from: data)
-                        DispatchQueue.main.async {
-                            fetchedItems.formUnion(decodedResponse.results)
+            for page in 1...5 {  // ✅ Fetch up to 5 pages per category
+                let urlString = "https://api.themoviedb.org/3/\(cat)?api_key=\(apiKey)&language=en-US&page=\(page)"
+                guard let url = URL(string: urlString) else { continue }
+
+                dispatchGroup.enter()
+                URLSession.shared.dataTask(with: url) { data, response, error in
+                    defer { dispatchGroup.leave() }
+
+                    if let data = data {
+                        do {
+                            let decodedResponse = try JSONDecoder().decode(MovieResponse.self, from: data)
+                            DispatchQueue.main.async {
+                                fetchedItems.formUnion(decodedResponse.results)
+                            }
+                        } catch {
+                            print("❌ Error decoding JSON: \(error)")
                         }
-                    } catch {
-                        print("❌ Error decoding JSON: \(error)")
                     }
-                }
-            }.resume()
+                }.resume()
+            }
         }
-        
+
         dispatchGroup.notify(queue: .main) {
             DispatchQueue.main.async {
-                if self.items.isEmpty { // ✅ Ensure the list stays consistent
-                    self.items = Array(fetchedItems).sorted(by: { ($0.title ?? "") < ($1.title ?? "") })
-                }
+                self.items = Array(fetchedItems).sorted(by: { ($0.title ?? "") < ($1.title ?? "") })
+                print("✅ Loaded \(self.items.count) items for \(category)")
             }
         }
     }
@@ -319,45 +320,46 @@ struct FullListView: View {
 
     func fetchData() {
         let apiKey = "2cbd04c2dac25629f413b3b7d5feef97"
-        var categories: [String]
-        
+        let categories: [String]
+
         if category == "all_movies" {
-            categories = ["movie/popular", "movie/now_playing", "movie/top_rated", "movie/upcoming", "trending/movie/day"]
+            categories = ["movie/popular", "movie/now_playing", "movie/top_rated", "movie/upcoming", "trending/movie/week"]
         } else if category == "all_tv" {
-            categories = ["tv/popular", "tv/on_the_air", "tv/top_rated", "tv/airing_today", "trending/tv/day"]
+            categories = ["tv/popular", "tv/on_the_air", "tv/top_rated", "tv/airing_today", "trending/tv/week"]
         } else {
             categories = [category]
         }
-        
+
         var fetchedItems = Set<Movie>()
         let dispatchGroup = DispatchGroup()
-        
+
         for cat in categories {
-            let urlString = "https://api.themoviedb.org/3/\(cat)?api_key=\(apiKey)&language=en-US&page=1"
-            guard let url = URL(string: urlString) else { continue }
-            
-            dispatchGroup.enter()
-            URLSession.shared.dataTask(with: url) { data, response, error in
-                defer { dispatchGroup.leave() }
-                
-                if let data = data {
-                    do {
-                        let decodedResponse = try JSONDecoder().decode(MovieResponse.self, from: data)
-                        DispatchQueue.main.async {
-                            fetchedItems.formUnion(decodedResponse.results)
+            for page in 1...5 {  // ✅ Fetch up to 5 pages per category
+                let urlString = "https://api.themoviedb.org/3/\(cat)?api_key=\(apiKey)&language=en-US&page=\(page)"
+                guard let url = URL(string: urlString) else { continue }
+
+                dispatchGroup.enter()
+                URLSession.shared.dataTask(with: url) { data, response, error in
+                    defer { dispatchGroup.leave() }
+
+                    if let data = data {
+                        do {
+                            let decodedResponse = try JSONDecoder().decode(MovieResponse.self, from: data)
+                            DispatchQueue.main.async {
+                                fetchedItems.formUnion(decodedResponse.results)
+                            }
+                        } catch {
+                            print("❌ Error decoding JSON: \(error)")
                         }
-                    } catch {
-                        print("❌ Error decoding JSON: \(error)")
                     }
-                }
-            }.resume()
+                }.resume()
+            }
         }
-        
+
         dispatchGroup.notify(queue: .main) {
             DispatchQueue.main.async {
-                if self.items.isEmpty { // ✅ Prevents resetting the order
-                    self.items = Array(fetchedItems).sorted(by: { ($0.title ?? "") < ($1.title ?? "") })
-                }
+                self.items = Array(fetchedItems).sorted(by: { ($0.title ?? "") < ($1.title ?? "") })
+                print("✅ Loaded \(self.items.count) items for \(category)")
             }
         }
     }
