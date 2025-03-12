@@ -15,11 +15,15 @@ struct Movie: Identifiable, Codable, Hashable {
     var displayTitle: String {
         return title ?? name ?? "Unknown Title"
     }
+    
+    private static let defaultPosterURL = URL(string: "https://www.content.numetro.co.za/ui_images/no_poster.png")
 
     // Construct full URL for the poster image
     var posterURL: URL? {
-        guard let path = posterPath else { return nil }
-        return URL(string: "https://image.tmdb.org/t/p/w500\(path)")
+        if let path = posterPath {
+            return URL(string: "https://image.tmdb.org/t/p/w500\(path)") ?? Movie.defaultPosterURL
+        }
+        return Movie.defaultPosterURL
     }
 
     // Construct full URL for the background image (backdrop)

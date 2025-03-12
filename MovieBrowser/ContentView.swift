@@ -5,11 +5,13 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var isSearching = false
     @State private var searchResults: [Movie] = []
+    @EnvironmentObject var watchlistManager: WatchlistManager
 
     enum MediaType: String, CaseIterable {
         case movies = "Movies"
         case tvShows = "TV Shows"
         case all = "All"
+        case watchlist = "Watchlist" //added watchlist tab
     }
 
     var body: some View {
@@ -28,7 +30,7 @@ struct ContentView: View {
                 .onChange(of: searchText) { _, _ in
                     performSearch()
                 }
-
+                
                 if isSearching {
                     // **Display search results in a vertical list**
                     ScrollView {
@@ -45,13 +47,15 @@ struct ContentView: View {
                                                     .cornerRadius(8)
                                                     .clipped()
                                             } placeholder: {
-                                                Rectangle()
-                                                    .fill(Color.gray.opacity(0.3))
+                                                Image("placeholder_poster") // added a placeholder image
+                                                    .resizable()
+                                                    .scaledToFill()
                                                     .frame(width: 80, height: 120)
                                                     .cornerRadius(8)
+                                                    .clipped()
                                             }
                                         }
-
+                                        
                                         // ✅ Title - Fixed Frame for Consistency
                                         Text(movie.displayTitle)
                                             .font(.headline)
@@ -66,7 +70,7 @@ struct ContentView: View {
                                     .cornerRadius(12)
                                 }
                             }
-
+                            
                         }
                         .padding(.horizontal)
                     }
@@ -82,25 +86,29 @@ struct ContentView: View {
                     .padding(.horizontal)
                     .background(Color(.systemGray5))
                     .cornerRadius(10)
-
+                    
                     // **Content Display**
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            if selectedTab == .all || selectedTab == .movies {
-                                HorizontalSectionView(title: "All Movies", category: "all_movies", searchText: $searchText)
-                                HorizontalSectionView(title: "Popular Movies", category: "movie/popular", searchText: $searchText)
-                                HorizontalSectionView(title: "Trending Movies", category: "trending/movie/day", searchText: $searchText)
-                                HorizontalSectionView(title: "Top Rated Movies", category: "movie/top_rated", searchText: $searchText)
+                    if selectedTab == .watchlist {
+                        WatchlistView() //calls watchlistview function if tab is watchlist
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 20) {
+                                if selectedTab == .all || selectedTab == .movies {
+                                    HorizontalSectionView(title: "All Movies", category: "all_movies", searchText: $searchText)
+                                    HorizontalSectionView(title: "Popular Movies", category: "movie/popular", searchText: $searchText)
+                                    HorizontalSectionView(title: "Trending Movies", category: "trending/movie/day", searchText: $searchText)
+                                    HorizontalSectionView(title: "Top Rated Movies", category: "movie/top_rated", searchText: $searchText)
+                                }
+                                
+                                if selectedTab == .all || selectedTab == .tvShows {
+                                    HorizontalSectionView(title: "All TV Shows", category: "all_tv", searchText: $searchText)
+                                    HorizontalSectionView(title: "Popular TV Shows", category: "tv/popular", searchText: $searchText)
+                                    HorizontalSectionView(title: "Trending TV Shows", category: "trending/tv/day", searchText: $searchText)
+                                    HorizontalSectionView(title: "Top Rated TV Shows", category: "tv/top_rated", searchText: $searchText)
+                                }
                             }
-
-                            if selectedTab == .all || selectedTab == .tvShows {
-                                HorizontalSectionView(title: "All TV Shows", category: "all_tv", searchText: $searchText)
-                                HorizontalSectionView(title: "Popular TV Shows", category: "tv/popular", searchText: $searchText)
-                                HorizontalSectionView(title: "Trending TV Shows", category: "trending/tv/day", searchText: $searchText)
-                                HorizontalSectionView(title: "Top Rated TV Shows", category: "tv/top_rated", searchText: $searchText)
-                            }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
                     }
                 }
             }
@@ -369,4 +377,5 @@ struct FullListView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(WatchlistManager())
 }

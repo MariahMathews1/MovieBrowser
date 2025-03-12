@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MovieDetailView: View {
     let movie: Movie
+    @EnvironmentObject var watchlistManager: WatchlistManager //create watchlistManager for user watchlist
 
     var body: some View {
         ScrollView {
@@ -42,10 +43,13 @@ struct MovieDetailView: View {
                                 .shadow(radius: 6)
                                 .padding(.top, 20)
                         } placeholder: {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 200, height: 300)
+                            Image("placeholder_poster") //added a placeholder image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 200)
                                 .cornerRadius(12)
+                                .shadow(radius: 6)
+                                .padding(.top, 20)
                         }
                     }
 
@@ -73,6 +77,24 @@ struct MovieDetailView: View {
                         .font(.body)
                         .padding(.top, 10)
                         .padding(.horizontal)
+                    
+                    //**Watchlist button** (feel free to change to a plus or some other button)
+                    Button(action: {
+                        if watchlistManager.isInWatchlist(movie) {
+                            watchlistManager.removeFromWatchlist(movie)
+                        } else {
+                            watchlistManager.addToWatchlist(movie)
+                        }
+                    }) {
+                        Text(watchlistManager.isInWatchlist(movie) ? "Remove from Watchlist" : "Add to Watchlist")
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(watchlistManager.isInWatchlist(movie) ? Color.red : Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    .padding(.top, 20)
+                    .padding(.horizontal)
 
                     Spacer()
                 }

@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct MovieBrowserApp: App {
+    @StateObject private var watchlistManager = WatchlistManager()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(watchlistManager)
         }
     }
 }
+
