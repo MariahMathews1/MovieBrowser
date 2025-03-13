@@ -1,4 +1,4 @@
-//controls the view of the watchlist tab
+
 import SwiftUI
 
 struct WatchlistView: View {
