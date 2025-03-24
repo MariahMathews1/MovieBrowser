@@ -77,6 +77,7 @@ struct WatchlistView: View {
                                     VStack(alignment: .leading) {
                                         Text(movie.displayTitle)
                                             .font(.headline)
+                                            .foregroundColor(Color.primary) // ✅ This adapts to light/dark mode
                                             .multilineTextAlignment(.leading)
 
                                         if watchlistManager.isWatched(movie) {
