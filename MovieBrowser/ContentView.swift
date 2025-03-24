@@ -16,94 +16,97 @@ struct ContentView: View {
 
     var body: some View {
         NavigationView {
-            VStack {
-                // **Search Bar**
-                TextField("Search...", text: $searchText, onEditingChanged: { editing in
-                    isSearching = editing
-                })
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
-                .padding(.horizontal)
-                .onChange(of: searchText) { _, _ in performSearch() }
-                
-                if isSearching {
-                    ScrollView {
-                        LazyVStack(spacing: 10) {
-                            ForEach(searchResults) { movie in
-                                NavigationLink(destination: MovieDetailView(movie: movie)) {
-                                    HStack(spacing: 15) {
-                                        if let posterURL = movie.posterURL {
-                                            AsyncImage(url: posterURL) { image in
-                                                image.resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 80, height: 120)
-                                                    .cornerRadius(8)
-                                                    .clipped()
-                                            } placeholder: {
-                                                Image("placeholder_poster")
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 80, height: 120)
-                                                    .cornerRadius(8)
-                                                    .clipped()
-                                            }
-                                        }
-
-                                        Text(movie.displayTitle)
-                                            .font(.headline)
-                                            .multilineTextAlignment(.leading)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .lineLimit(2)
-                                            .padding(.vertical, 5)
-                                    }
-                                    .frame(height: 130)
-                                    .padding(.horizontal)
-                                    .background(Color(.systemGray5))
-                                    .cornerRadius(12)
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                }
-                else {
-                    // **Tab Picker**
-                    Picker("Select Type", selection: $selectedTab) {
-                        ForEach(MediaType.allCases, id: \.self) { type in
-                            Text(type.rawValue).fontWeight(.bold)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
+            ZStack{
+                VStack{
+                    // **Search Bar**
+                    TextField("Search...", text: $searchText, onEditingChanged: { editing in
+                        isSearching = editing
+                    })
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
                     .padding(.horizontal)
-
-                    // **Content View**
-                    if selectedTab == .watchlist {
-                        WatchlistView()
-                    } else {
+                    .onChange(of: searchText) { _, _ in performSearch() }
+                    
+                    if isSearching {
                         ScrollView {
-                            VStack(alignment: .leading, spacing: 20) {
-                                if selectedTab == .all || selectedTab == .movies {
-                                    HorizontalSectionView(title: "All Movies", category: "all_movies", searchText: $searchText)
-                                    HorizontalSectionView(title: "Popular Movies", category: "movie/popular", searchText: $searchText)
-                                    HorizontalSectionView(title: "Trending Movies", category: "trending/movie/day", searchText: $searchText)
-                                    HorizontalSectionView(title: "Top Rated Movies", category: "movie/top_rated", searchText: $searchText)
-                                }
+                            LazyVStack(spacing: 10) {
+                                ForEach(searchResults) { movie in
+                                    NavigationLink(destination: MovieDetailView(movie: movie)) {
+                                        HStack(spacing: 15) {
+                                            if let posterURL = movie.posterURL {
+                                                AsyncImage(url: posterURL) { image in
+                                                    image.resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 80, height: 120)
+                                                        .cornerRadius(8)
+                                                        .clipped()
+                                                } placeholder: {
+                                                    Image("placeholder_poster")
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 80, height: 120)
+                                                        .cornerRadius(8)
+                                                        .clipped()
+                                                }
+                                            }
 
-                                if selectedTab == .all || selectedTab == .tvShows {
-                                    HorizontalSectionView(title: "All TV Shows", category: "all_tv", searchText: $searchText)
-                                    HorizontalSectionView(title: "Popular TV Shows", category: "tv/popular", searchText: $searchText)
-                                    HorizontalSectionView(title: "Trending TV Shows", category: "trending/tv/day", searchText: $searchText)
-                                    HorizontalSectionView(title: "Top Rated TV Shows", category: "tv/top_rated", searchText: $searchText)
+                                            Text(movie.displayTitle)
+                                                .font(.headline)
+                                                .multilineTextAlignment(.leading)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .lineLimit(2)
+                                                .padding(.vertical, 5)
+                                        }
+                                        .frame(height: 130)
+                                        .padding(.horizontal)
+                                        .background(Color(.systemGray5))
+                                        .cornerRadius(12)
+                                    }
                                 }
-
                             }
                             .padding(.horizontal)
                         }
                     }
+                    else {
+                        // **Tab Picker**
+                        Picker("Select Type", selection: $selectedTab) {
+                            ForEach(MediaType.allCases, id: \.self) { type in
+                                Text(type.rawValue).fontWeight(.bold)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding(.horizontal)
+
+                        // **Content View**
+                        if selectedTab == .watchlist {
+                            WatchlistView()
+                        } else {
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 20) {
+                                    if selectedTab == .all || selectedTab == .movies {
+                                        HorizontalSectionView(title: "All Movies", category: "all_movies", searchText: $searchText)
+                                        HorizontalSectionView(title: "Popular Movies", category: "movie/popular", searchText: $searchText)
+                                        HorizontalSectionView(title: "Trending Movies", category: "trending/movie/day", searchText: $searchText)
+                                        HorizontalSectionView(title: "Top Rated Movies", category: "movie/top_rated", searchText: $searchText)
+                                    }
+
+                                    if selectedTab == .all || selectedTab == .tvShows {
+                                        HorizontalSectionView(title: "All TV Shows", category: "all_tv", searchText: $searchText)
+                                        HorizontalSectionView(title: "Popular TV Shows", category: "tv/popular", searchText: $searchText)
+                                        HorizontalSectionView(title: "Trending TV Shows", category: "trending/tv/day", searchText: $searchText)
+                                        HorizontalSectionView(title: "Top Rated TV Shows", category: "tv/top_rated", searchText: $searchText)
+                                    }
+
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                    }
                 }
+                .navigationTitle("Browse \(selectedTab.rawValue)")
             }
-            .navigationTitle("Browse \(selectedTab.rawValue)")
+            
         }
     }
 
