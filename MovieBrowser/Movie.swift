@@ -15,6 +15,8 @@ struct Movie: Identifiable, Codable, Hashable {
     let genres: [Genre]? // Now stores full genre objects
     let numberOfSeasons: Int? // TV Shows only
     let numberOfEpisodes: Int? // TV Shows only
+    let popularity: Double?
+
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id) // ✅ Only hash the movie ID
@@ -92,6 +94,7 @@ struct Movie: Identifiable, Codable, Hashable {
         case genres
         case numberOfSeasons = "number_of_seasons"
         case numberOfEpisodes = "number_of_episodes"
+        case popularity
     }
 }
 

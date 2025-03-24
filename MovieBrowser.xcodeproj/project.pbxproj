@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		882D73862D91C74D002089AD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 882D73832D91C74D002089AD /* Assets.xcassets */; };
+		882D73872D91C74D002089AD /* appstore.png in Resources */ = {isa = PBXBuildFile; fileRef = 882D73822D91C74D002089AD /* appstore.png */; };
+		882D73882D91C74D002089AD /* playstore.png in Resources */ = {isa = PBXBuildFile; fileRef = 882D73842D91C74D002089AD /* playstore.png */; };
 		88F5C4782D80C56E0017BFD9 /* YouTubeiOSPlayerHelper in Frameworks */ = {isa = PBXBuildFile; productRef = 88F5C4772D80C56E0017BFD9 /* YouTubeiOSPlayerHelper */; };
 /* End PBXBuildFile section */
 
@@ -28,6 +31,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		882D73822D91C74D002089AD /* appstore.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = appstore.png; sourceTree = "<group>"; };
+		882D73832D91C74D002089AD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		882D73842D91C74D002089AD /* playstore.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = playstore.png; sourceTree = "<group>"; };
 		88F5C4382D7D18E30017BFD9 /* MovieBrowser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MovieBrowser.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		88F5C4482D7D18E50017BFD9 /* MovieBrowserTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MovieBrowserTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		88F5C4522D7D18E50017BFD9 /* MovieBrowserUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MovieBrowserUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -77,9 +83,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		882D73852D91C74D002089AD /* AppIcons */ = {
+			isa = PBXGroup;
+			children = (
+				882D73822D91C74D002089AD /* appstore.png */,
+				882D73832D91C74D002089AD /* Assets.xcassets */,
+				882D73842D91C74D002089AD /* playstore.png */,
+			);
+			path = AppIcons;
+			sourceTree = "<group>";
+		};
 		88F5C42F2D7D18E30017BFD9 = {
 			isa = PBXGroup;
 			children = (
+				882D73852D91C74D002089AD /* AppIcons */,
 				88F5C43A2D7D18E30017BFD9 /* MovieBrowser */,
 				88F5C44B2D7D18E50017BFD9 /* MovieBrowserTests */,
 				88F5C4552D7D18E50017BFD9 /* MovieBrowserUITests */,
@@ -221,6 +238,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				882D73862D91C74D002089AD /* Assets.xcassets in Resources */,
+				882D73872D91C74D002089AD /* appstore.png in Resources */,
+				882D73882D91C74D002089AD /* playstore.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -402,6 +422,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MovieBrowser/Preview Content\"";
@@ -430,6 +451,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MovieBrowser/Preview Content\"";

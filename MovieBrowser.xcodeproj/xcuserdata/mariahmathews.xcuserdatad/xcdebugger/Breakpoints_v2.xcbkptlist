@@ -8,15 +8,15 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "7737F9A5-7967-468E-BC56-57910AAA58A6"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "MovieBrowser/HorizontalSectionView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "18"
-            endingLineNumber = "18"
-            landmarkName = "body"
+            startingLineNumber = "19"
+            endingLineNumber = "19"
+            landmarkName = "filteredItems"
             landmarkType = "24">
          </BreakpointContent>
       </BreakpointProxy>

@@ -1,8 +1,10 @@
 import SwiftUI
+import WebKit
 
 struct MovieDetailView: View {
     let movie: Movie
-    @EnvironmentObject var watchlistManager: WatchlistManager //create watchlistManager for user watchlist
+    @EnvironmentObject var watchlistManager: WatchlistManager
+    @AppStorage("isDarkMode") private var isDarkMode = true
 
     @State private var detailedMovie: Movie? = nil
     @State private var cast: [CastMember] = []
@@ -10,18 +12,12 @@ struct MovieDetailView: View {
     @State private var streamingProviders: [String] = []
     @State private var trailerKey: String? = nil
 
-
-    @State private var showTrailer = false
-    let apiKey = "2cbd04c2dac25629f413b3b7d5feef97" // Ensure API key is correctly set
-
-    var isTVShow: Bool {
-        return movie.firstAirDate != nil
-    }
+    let apiKey = "2cbd04c2dac25629f413b3b7d5feef97"
+    var isTVShow: Bool { movie.firstAirDate != nil }
 
     var body: some View {
         ScrollView {
             ZStack {
-                // **Backdrop with Gradient Overlay**
                 if let backdropURL = movie.backdropURL {
                     AsyncImage(url: backdropURL) { image in
                         image.resizable()
@@ -29,9 +25,18 @@ struct MovieDetailView: View {
                             .frame(width: UIScreen.main.bounds.width, height: 380)
                             .clipped()
                             .overlay(
-                                LinearGradient(gradient: Gradient(colors: [.black.opacity(0.9), .black.opacity(0.6), .clear, .clear, .black.opacity(0.7), .black.opacity(1.0)]),
-                                               startPoint: .top,
-                                               endPoint: .bottom)
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        .black.opacity(0.9),
+                                        .black.opacity(0.6),
+                                        .clear,
+                                        .clear,
+                                        .black.opacity(0.7),
+                                        .black
+                                    ]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
                             )
                     } placeholder: {
                         Rectangle()
@@ -40,7 +45,6 @@ struct MovieDetailView: View {
                     }
                 }
 
-                // **Poster Image**
                 if let posterURL = movie.posterURL {
                     AsyncImage(url: posterURL) { image in
                         image.resizable()
@@ -58,106 +62,111 @@ struct MovieDetailView: View {
                     }
                 }
             }
-            .padding(.bottom, 80)
+            .padding(.bottom, 100)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 if let detailedMovie = detailedMovie {
-                    // **Title**
                     Text(detailedMovie.displayTitle)
                         .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(isDarkMode ? .white : .black)
                         .multilineTextAlignment(.center)
-                        .padding(.top, 40)
+                        .padding(.horizontal)
 
-
-            
-                    //**Watchlist button** (feel free to change to a plus or some other button)
-                    Button(action: {
-                        if watchlistManager.isInWatchlist(movie) {
-                            watchlistManager.removeFromWatchlist(movie)
-                        } else {
-                            watchlistManager.addToWatchlist(movie)
+                    // Info
+                    HStack(spacing: 16) {
+                        HStack {
+                            Image(systemName: "star.fill").foregroundColor(.yellow)
+                            Text("\(String(format: "%.1f", detailedMovie.voteAverage ?? 0))/10")
+                                .foregroundColor(isDarkMode ? .white : .black)
                         }
-                    }) {
-                        Text(watchlistManager.isInWatchlist(movie) ? "Remove from Watchlist" : "Add to Watchlist")
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(watchlistManager.isInWatchlist(movie) ? Color.red : Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    .padding(.top, 20)
-                    .padding(.bottom, 20)
-                    .padding(.horizontal)
 
-                    // **Movie Stats (Ratings, Release Date, Genres, Runtime)**
-                    VStack {
-                        HStack(spacing: 16) {
+                        if let releaseDate = detailedMovie.formattedReleaseDate {
                             HStack {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.yellow)
-                                Text("\(String(format: "%.1f", detailedMovie.voteAverage ?? 0))/10")
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
+                                Image(systemName: "calendar").foregroundColor(.gray)
+                                Text(releaseDate).foregroundColor(.gray)
                             }
+                        }
+                    }
 
-                            if let releaseDate = detailedMovie.formattedReleaseDate {
-                                HStack {
-                                    Image(systemName: "calendar")
-                                        .foregroundColor(.white.opacity(0.7))
-                                    Text(releaseDate)
-                                        .foregroundColor(.white.opacity(0.7))
+                    if let runtime = detailedMovie.formattedRuntime {
+                        Text("\(runtime) • \(detailedMovie.genreText)")
+                            .foregroundColor(isDarkMode ? .white : .black)
+                            .font(.subheadline)
+                    } else if let seasonInfo = detailedMovie.formattedSeasonsEpisodes {
+                        Text("\(seasonInfo) • \(detailedMovie.genreText)")
+                            .foregroundColor(isDarkMode ? .white : .black)
+                            .font(.subheadline)
+                    }
+
+                    // Icons
+                    HStack(spacing: 30) {
+                        actionButton(
+                            imageName: watchlistManager.isLiked(movie) ? "hand.thumbsup.fill" : "hand.thumbsup",
+                            label: "Like",
+                            color: watchlistManager.isLiked(movie) ? .green : (isDarkMode ? .white : .black),
+                            action: { watchlistManager.toggleLike(for: movie) }
+                        )
+
+                        actionButton(
+                            imageName: watchlistManager.isDisliked(movie) ? "hand.thumbsdown.fill" : "hand.thumbsdown",
+                            label: "Dislike",
+                            color: watchlistManager.isDisliked(movie) ? .red : (isDarkMode ? .white : .black),
+                            action: { watchlistManager.toggleDislike(for: movie) }
+                        )
+
+                        actionButton(
+                            imageName: watchlistManager.isWatched(movie) ? "eye.fill" : "eye",
+                            label: watchlistManager.isWatched(movie) ? "Watched" : "Unwatched",
+                            color: isDarkMode ? .white : .black,
+                            action: { watchlistManager.toggleWatched(for: movie) }
+                        )
+
+                        actionButton(
+                            imageName: watchlistManager.isInWatchlist(movie) ? "bookmark.fill" : "bookmark",
+                            label: "Watchlist",
+                            color: isDarkMode ? .white : .black,
+                            action: {
+                                if watchlistManager.isInWatchlist(movie) {
+                                    watchlistManager.removeFromWatchlist(movie)
+                                } else {
+                                    watchlistManager.addToWatchlist(movie)
                                 }
                             }
-                        }
-
-                        if let runtime = detailedMovie.formattedRuntime {
-                            Text("\(runtime) • \(detailedMovie.genreText)")
-                                .foregroundColor(.white)
-                                .font(.subheadline)
-                        } else if let seasonInfo = detailedMovie.formattedSeasonsEpisodes {
-                            Text("\(seasonInfo) • \(detailedMovie.genreText)")
-                                .foregroundColor(.white)
-                                .font(.subheadline)
-                        }
+                        )
                     }
                     .padding()
-                    .background(Color.white.opacity(0.15))
-                    .cornerRadius(10)
-                    .shadow(radius: 5)
-                    .padding(.bottom, 25)
+                    .background((isDarkMode ? Color.white.opacity(0.1) : Color.gray.opacity(0.1)))
+                    .cornerRadius(12)
 
-                  
-                    // **Watch Trailer Button**
+                    // Trailer
                     if let key = trailerKey {
                         Text("🎬 Watch Trailer")
                             .font(.title2)
                             .bold()
                             .padding(.top, 20)
-                            .foregroundColor(.white)
+                            .foregroundColor(isDarkMode ? .white : .black)
 
-                        YouTubePlayerView(videoID: key) // ✅ Embedded Video
-                            .frame(height: 250) // Adjust height as needed
+                        YouTubePlayerView(videoID: key)
+                            .frame(height: 250)
                             .cornerRadius(12)
                             .padding(.horizontal)
                     }
 
-                    // **Expandable Description**
+                    // Overview
                     Text(detailedMovie.overview)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(isDarkMode ? .white.opacity(0.9) : .black.opacity(0.9))
                         .font(.body)
                         .padding(.horizontal, 20)
+                        .padding(.top, 30)
                         .frame(maxWidth: 400, alignment: .leading)
-                        .padding(.top, 10)
-                        .padding(.bottom, 20)
 
-                    // **Cast Section**
+                    // Cast
                     if !cast.isEmpty {
                         VStack(alignment: .leading) {
                             Text("Cast")
                                 .font(.title2)
                                 .bold()
-                                .foregroundColor(.white)
+                                .foregroundColor(isDarkMode ? .white : .black)
                                 .padding(.horizontal)
 
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -170,16 +179,15 @@ struct MovieDetailView: View {
                                                         .scaledToFill()
                                                         .frame(width: 70, height: 70)
                                                         .clipShape(Circle())
-                                                        .overlay(Circle().stroke(Color.white, lineWidth: 1))
+                                                        .overlay(Circle().stroke(Color.gray, lineWidth: 1))
                                                 } placeholder: {
-                                                    Image(systemName: "person.crop.circle.fill") // Default System Image
+                                                    Image(systemName: "person.crop.circle.fill")
                                                         .resizable()
                                                         .scaledToFit()
                                                         .frame(width: 70, height: 70)
-                                                        .foregroundColor(.gray.opacity(0.7)) // Subtle gray color
+                                                        .foregroundColor(.gray.opacity(0.7))
                                                 }
                                             } else {
-                                                // Default SF Symbol for missing profile picture
                                                 Image(systemName: "person.crop.circle.fill")
                                                     .resizable()
                                                     .scaledToFit()
@@ -189,7 +197,7 @@ struct MovieDetailView: View {
 
                                             Text(actor.name)
                                                 .font(.caption)
-                                                .foregroundColor(.white)
+                                                .foregroundColor(isDarkMode ? .white : .black)
                                                 .frame(width: 80)
                                                 .multilineTextAlignment(.center)
                                         }
@@ -200,16 +208,16 @@ struct MovieDetailView: View {
                             }
                         }
                     }
-                    
-                    // **Similar Movies Section**
+
+                    // Similar
                     if !similarMovies.isEmpty {
                         VStack(alignment: .leading) {
                             Text("You May Also Like")
                                 .font(.title2)
                                 .bold()
-                                .foregroundColor(.white)
+                                .foregroundColor(isDarkMode ? .white : .black)
                                 .padding(.horizontal)
-                                .padding(.top,50)
+                                .padding(.top, 40)
 
                             ScrollView(.horizontal, showsIndicators: false) {
                                 LazyHStack(spacing: 15) {
@@ -233,7 +241,7 @@ struct MovieDetailView: View {
                                                     .font(.caption)
                                                     .multilineTextAlignment(.center)
                                                     .frame(width: 120)
-                                                    .foregroundColor(.white)
+                                                    .foregroundColor(isDarkMode ? .white : .black)
                                             }
                                         }
                                     }
@@ -249,12 +257,26 @@ struct MovieDetailView: View {
                 fetchCast()
                 fetchSimilarMovies()
                 fetchStreamingProviders()
+                fetchTrailer()
             }
         }
-        .background(Color.black.edgesIgnoringSafeArea(.all))
+        .background((isDarkMode ? Color.black : Color.white).edgesIgnoringSafeArea(.all))
     }
 
-    // **Fetch Full Movie or TV Show Details**
+    // MARK: - Shared Action Button
+    func actionButton(imageName: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack {
+                Image(systemName: imageName)
+                    .foregroundColor(color)
+                Text(label)
+                    .font(.caption)
+                    .foregroundColor(color)
+            }
+        }
+    }
+
+    // MARK: - API Calls
     func fetchFullDetails() {
         let baseURL = isTVShow ? "https://api.themoviedb.org/3/tv/\(movie.id)" : "https://api.themoviedb.org/3/movie/\(movie.id)"
         let urlString = "\(baseURL)?api_key=\(apiKey)&append_to_response=genres,runtime"
@@ -262,127 +284,62 @@ struct MovieDetailView: View {
         guard let url = URL(string: urlString) else { return }
 
         URLSession.shared.dataTask(with: url) { data, _, _ in
-            if let data = data, let decodedResponse = try? JSONDecoder().decode(Movie.self, from: data) {
-                DispatchQueue.main.async {
-                    self.detailedMovie = decodedResponse
-                }
+            if let data = data, let decoded = try? JSONDecoder().decode(Movie.self, from: data) {
+                DispatchQueue.main.async { self.detailedMovie = decoded }
             }
         }.resume()
     }
 
-    // **Fetch Cast Data**
     func fetchCast() {
         let endpoint = isTVShow ? "tv" : "movie"
-        let urlString = "https://api.themoviedb.org/3/\(endpoint)/\(movie.id)/credits?api_key=\(apiKey)&language=en-US"
+        let urlString = "https://api.themoviedb.org/3/\(endpoint)/\(movie.id)/credits?api_key=\(apiKey)"
 
         URLSession.shared.dataTask(with: URL(string: urlString)!) { data, _, _ in
-            if let data = data, let decodedResponse = try? JSONDecoder().decode(CastResponse.self, from: data) {
-                DispatchQueue.main.async {
-                    self.cast = decodedResponse.cast
-                }
+            if let data = data, let decoded = try? JSONDecoder().decode(CastResponse.self, from: data) {
+                DispatchQueue.main.async { self.cast = decoded.cast }
             }
         }.resume()
     }
 
-    // **Fetch Similar Movies**
     func fetchSimilarMovies() {
-            let baseURL = isTVShow ? "tv" : "movie"
-            let urlString = "https://api.themoviedb.org/3/\(baseURL)/\(movie.id)/similar?api_key=\(apiKey)"
-
-            URLSession.shared.dataTask(with: URL(string: urlString)!) { data, _, _ in
-                if let data = data, let decodedResponse = try? JSONDecoder().decode(SimilarMoviesResponse.self, from: data) {
-                    DispatchQueue.main.async {
-                        self.similarMovies = decodedResponse.results
-                    }
-                }
-            }.resume()
-        }
-
-    // **Fetch Streaming Providers**
-    func fetchStreamingProviders() {
-        let baseURL = isTVShow ? "tv" : "movie"
-        let urlString = "https://api.themoviedb.org/3/\(baseURL)/\(movie.id)/watch/providers?api_key=\(apiKey)"
+        let endpoint = isTVShow ? "tv" : "movie"
+        let urlString = "https://api.themoviedb.org/3/\(endpoint)/\(movie.id)/similar?api_key=\(apiKey)"
 
         URLSession.shared.dataTask(with: URL(string: urlString)!) { data, _, _ in
-            if let data = data, let decodedResponse = try? JSONDecoder().decode(ProviderResponse.self, from: data) {
+            if let data = data, let decoded = try? JSONDecoder().decode(SimilarMoviesResponse.self, from: data) {
+                DispatchQueue.main.async { self.similarMovies = decoded.results }
+            }
+        }.resume()
+    }
+
+    func fetchStreamingProviders() {
+        let endpoint = isTVShow ? "tv" : "movie"
+        let urlString = "https://api.themoviedb.org/3/\(endpoint)/\(movie.id)/watch/providers?api_key=\(apiKey)"
+
+        URLSession.shared.dataTask(with: URL(string: urlString)!) { data, _, _ in
+            if let data = data, let decoded = try? JSONDecoder().decode(ProviderResponse.self, from: data) {
                 DispatchQueue.main.async {
-                    self.streamingProviders = decodedResponse.results["US"]?.compactMap { $0.provider_name } ?? []
+                    self.streamingProviders = decoded.results["US"]?.compactMap { $0.provider_name } ?? []
                 }
             }
         }.resume()
     }
-    
+
     func fetchTrailer() {
-            let endpoint = isTVShow ? "tv" : "movie"
-            let urlString = "https://api.themoviedb.org/3/\(endpoint)/\(movie.id)/videos?api_key=\(apiKey)&language=en-US"
+        let endpoint = isTVShow ? "tv" : "movie"
+        let urlString = "https://api.themoviedb.org/3/\(endpoint)/\(movie.id)/videos?api_key=\(apiKey)"
 
-            guard let url = URL(string: urlString) else {
-                print("❌ Invalid URL")
-                return
-            }
-
-            URLSession.shared.dataTask(with: url) { data, _, _ in
-                if let data = data {
-                    do {
-                        let decodedResponse = try JSONDecoder().decode(VideoResponse.self, from: data)
-                        DispatchQueue.main.async {
-                            if let key = decodedResponse.results.first(where: { $0.site == "YouTube" && $0.type == "Trailer" })?.key {
-                                self.trailerKey = key
-                                print("✅ Correct Trailer Key Found: \(key)")
-                            } else {
-                                print("❌ No valid YouTube trailer found.")
-                            }
-                        }
-                    } catch {
-                        print("❌ JSON Decoding Error: \(error)")
+        URLSession.shared.dataTask(with: URL(string: urlString)!) { data, _, _ in
+            if let data = data {
+                do {
+                    let decoded = try JSONDecoder().decode(VideoResponse.self, from: data)
+                    DispatchQueue.main.async {
+                        self.trailerKey = decoded.results.first(where: { $0.site == "YouTube" && $0.type == "Trailer" })?.key
                     }
-                } else {
-                    print("❌ No data received from API")
+                } catch {
+                    print("❌ Trailer error: \(error)")
                 }
-            }.resume()
-        }
-
-
-}
-
-
-import SwiftUI
-import WebKit
-
-struct TrailerView: View {
-    var trailerKey: String
-    @Environment(\.presentationMode) var presentationMode
-
-    var body: some View {
-        VStack {
-            if let url = URL(string: "https://www.youtube.com/embed/\(trailerKey)?autoplay=1&playsinline=1") {
-                WebView(url: url)
-                    .edgesIgnoringSafeArea(.all)
-                    .onAppear {
-                        print("🔗 Loading Trailer: \(url.absoluteString)")
-                    }
-            } else {
-                VStack {
-                    Text("Trailer not available")
-                        .foregroundColor(.white)
-                        .padding()
-                    
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        Text("Dismiss")
-                            .padding()
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.black.edgesIgnoringSafeArea(.all))
             }
-        }
+        }.resume()
     }
 }
-
-
-

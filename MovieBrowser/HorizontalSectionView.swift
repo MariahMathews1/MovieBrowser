@@ -4,12 +4,36 @@ struct HorizontalSectionView: View {
     let title: String
     let category: String
     @State private var items: [Movie] = []
+    @State private var hasLoaded = false
     @Binding var searchText: String  // ✅ Ensure this is here
+    @Binding var selectedFilter: ContentView.BrowseFilter
+    @EnvironmentObject var watchlistManager: WatchlistManager
+    var isDarkMode: Bool
 
     var filteredItems: [Movie] {
-        let limitedItems = items.prefix(20) // ✅ Limit to 20 items
-        return searchText.isEmpty ? Array(limitedItems) : limitedItems.filter { $0.displayTitle.lowercased().contains(searchText.lowercased()) }
+        let limitedItems = items.prefix(20)
+
+        return limitedItems.filter { movie in
+            let matchesSearch = searchText.isEmpty || movie.displayTitle.lowercased().contains(searchText.lowercased())
+            let matchesFilter: Bool
+
+            switch selectedFilter {
+            case .all:
+                matchesFilter = true
+            case .watched:
+                matchesFilter = watchlistManager.isWatched(movie)
+            case .unwatched:
+                matchesFilter = !watchlistManager.isWatched(movie)
+            case .liked:
+                matchesFilter = watchlistManager.isLiked(movie)
+            case .disliked:
+                matchesFilter = watchlistManager.isDisliked(movie)
+            }
+
+            return matchesSearch && matchesFilter
+        }
     }
+
 
 
     var body: some View {
@@ -18,17 +42,18 @@ struct HorizontalSectionView: View {
                 Text(title)
                     .font(.title2)
                     .bold()
+                    .foregroundStyle(
+                        LinearGradient(colors: [.purple, .pink], startPoint: .leading, endPoint: .trailing)
+                    )
 
                 Spacer()
 
-                // **Navigation Link for "See More"**
                 NavigationLink(destination: FullListView(category: category, title: title)) {
                     Text("See More →")
-                        .foregroundColor(.blue)
+                        .foregroundColor(isDarkMode ? .white : .black)
                 }
-
-
             }
+
             .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -37,24 +62,36 @@ struct HorizontalSectionView: View {
                         NavigationLink(destination: MovieDetailView(movie: item)) {
                             VStack {
                                 if let posterURL = item.posterURL {
-                                    AsyncImage(url: posterURL) { image in
-                                        image.resizable()
-                                            .scaledToFill()
-                                            .frame(width: 120, height: 180)
-                                            .cornerRadius(10)
-                                    } placeholder: {
-                                        Rectangle()
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 120, height: 180)
-                                            .cornerRadius(10)
+                                    ZStack(alignment: .topTrailing) {
+                                        AsyncImage(url: posterURL) { image in
+                                            image.resizable()
+                                                .scaledToFill()
+                                                .frame(width: 120, height: 180)
+                                                .cornerRadius(10)
+                                        } placeholder: {
+                                            Rectangle()
+                                                .fill(Color.gray.opacity(0.3))
+                                                .frame(width: 120, height: 180)
+                                                .cornerRadius(10)
+                                        }
+                                        if watchlistManager.isWatched(item) {
+                                            Text("Watched")
+                                                .font(.caption2)
+                                                .padding(4)
+                                                .background(Color.black.opacity(0.7))
+                                                .foregroundColor(.white)
+                                                .cornerRadius(6)
+                                                .padding(6)
+                                        }
                                     }
                                 }
                                 Text(item.displayTitle)
-                                    .font(.caption)
+                                    .font(.title3)
                                     .multilineTextAlignment(.center)
                                     .frame(width: 120)
                                     .lineLimit(2)
                                     .frame(width: 120, height: 40)
+                                    .foregroundColor(isDarkMode ? .white : .black)
                             }
                         }
                     }
@@ -63,7 +100,10 @@ struct HorizontalSectionView: View {
             }
             .frame(height: 220)
             .onAppear {
-                fetchData()
+                if !hasLoaded {
+                    fetchData()
+                    hasLoaded = true
+                }
             }
         }
     }
@@ -73,12 +113,12 @@ struct HorizontalSectionView: View {
         let categories: [String]
 
         if category == "all_movies" {
-            categories = ["movie/popular", "movie/now_playing", "movie/top_rated", "movie/upcoming", "trending/movie/week"]
-        } else if category == "all_tv" {
-            categories = ["tv/popular", "tv/on_the_air", "tv/top_rated", "tv/airing_today", "trending/tv/week"]
-        } else {
-            categories = [category]
-        }
+                categories = ["movie/now_playing", "movie/top_rated", "movie/upcoming", "trending/movie/week"]
+            } else if category == "all_tv" {
+                categories = ["tv/on_the_air", "tv/top_rated", "tv/airing_today", "trending/tv/week"]
+            } else {
+                categories = [category]
+            }
 
         var fetchedItems = [Int: Movie]() // ✅ Dictionary to track unique movies by ID
         let dispatchGroup = DispatchGroup()
@@ -110,7 +150,8 @@ struct HorizontalSectionView: View {
 
         dispatchGroup.notify(queue: .main) {
             DispatchQueue.main.async {
-                self.items = Array(fetchedItems.values).sorted(by: { ($0.title ?? "") < ($1.title ?? "") }) // ✅ Convert dictionary back to an array
+                self.items = Array(fetchedItems.values).sorted(by: { ($0.popularity ?? 0) > ($1.popularity ?? 0) })
+ // ✅ Convert dictionary back to an array
                 print("✅ Loaded \(self.items.count) unique items for \(category)")
             }
         }
