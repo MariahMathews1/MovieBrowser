@@ -5,7 +5,16 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var isSearching = false
     @State private var searchResults: [Movie] = []
+    @State private var selectedFilter: BrowseFilter = .all
     @EnvironmentObject var watchlistManager: WatchlistManager
+    
+    enum BrowseFilter: String, CaseIterable {
+        case all = "all"
+        case unwatched = "Unwatched"
+        case watched = "Watched"
+        case liked = "Liked"
+        case disliked = "Disliked"
+    }
 
     enum MediaType: String, CaseIterable {
         case movies = "Movies"
@@ -16,7 +25,27 @@ struct ContentView: View {
 
     var body: some View {
         NavigationView {
-            VStack {
+            VStack (spacing: 10) {
+                // **App Title**
+                Text("🎬 Movieholic Movie Browser")
+                    .font(.largeTitle)
+                    .bold()
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.purple, .pink],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                // **Browse Label**
+                Text("Browse \(selectedTab.rawValue)")
+                    .font(.title)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
                 // **Search Bar**
                 TextField("Search...", text: $searchText, onEditingChanged: { editing in
                     isSearching = editing
@@ -76,6 +105,22 @@ struct ContentView: View {
                     }
                     .pickerStyle(SegmentedPickerStyle())
                     .padding(.horizontal)
+                    
+                    // **Filter Picker**
+                    HStack(alignment: .center) {
+                        Text("Filter:")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, -15)
+                        Picker("Filter", selection: $selectedFilter) {
+                            ForEach(BrowseFilter.allCases, id: \.self) { filter in
+                                Text(filter.rawValue)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 47)
 
                     // **Content View**
                     if selectedTab == .watchlist {
@@ -84,17 +129,17 @@ struct ContentView: View {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 20) {
                                 if selectedTab == .all || selectedTab == .movies {
-                                    HorizontalSectionView(title: "All Movies", category: "all_movies", searchText: $searchText)
-                                    HorizontalSectionView(title: "Popular Movies", category: "movie/popular", searchText: $searchText)
-                                    HorizontalSectionView(title: "Trending Movies", category: "trending/movie/day", searchText: $searchText)
-                                    HorizontalSectionView(title: "Top Rated Movies", category: "movie/top_rated", searchText: $searchText)
+                                    HorizontalSectionView(title: "All Movies", category: "all_movies", searchText: $searchText, selectedFilter: $selectedFilter)
+                                    HorizontalSectionView(title: "Popular Movies", category: "movie/popular", searchText: $searchText, selectedFilter: $selectedFilter)
+                                    HorizontalSectionView(title: "Trending Movies", category: "trending/movie/day", searchText: $searchText, selectedFilter: $selectedFilter)
+                                    HorizontalSectionView(title: "Top Rated Movies", category: "movie/top_rated", searchText: $searchText, selectedFilter: $selectedFilter)
                                 }
 
                                 if selectedTab == .all || selectedTab == .tvShows {
-                                    HorizontalSectionView(title: "All TV Shows", category: "all_tv", searchText: $searchText)
-                                    HorizontalSectionView(title: "Popular TV Shows", category: "tv/popular", searchText: $searchText)
-                                    HorizontalSectionView(title: "Trending TV Shows", category: "trending/tv/day", searchText: $searchText)
-                                    HorizontalSectionView(title: "Top Rated TV Shows", category: "tv/top_rated", searchText: $searchText)
+                                    HorizontalSectionView(title: "All TV Shows", category: "all_tv", searchText: $searchText, selectedFilter: $selectedFilter)
+                                    HorizontalSectionView(title: "Popular TV Shows", category: "tv/popular", searchText: $searchText, selectedFilter: $selectedFilter)
+                                    HorizontalSectionView(title: "Trending TV Shows", category: "trending/tv/day", searchText: $searchText, selectedFilter: $selectedFilter)
+                                    HorizontalSectionView(title: "Top Rated TV Shows", category: "tv/top_rated", searchText: $searchText, selectedFilter: $selectedFilter)
                                 }
 
                             }
@@ -103,7 +148,8 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("Browse \(selectedTab.rawValue)")
+            // Commented out to add new title
+            //.navigationTitle("Browse \(selectedTab.rawValue)")
         }
     }
 

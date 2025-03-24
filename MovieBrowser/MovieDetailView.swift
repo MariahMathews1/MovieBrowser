@@ -1,4 +1,5 @@
 import SwiftUI
+import WebKit
 
 struct MovieDetailView: View {
     let movie: Movie
@@ -60,6 +61,37 @@ struct MovieDetailView: View {
             }
             .padding(.bottom, 80)
 
+            // 👍👎 Like/Dislike Buttons
+            HStack(spacing: 40) {
+                Button(action: {
+                    watchlistManager.toggleLike(for: movie)
+                }) {
+                    VStack {
+                        Image(systemName: watchlistManager.isLiked(movie) ? "hand.thumbsup.fill" : "hand.thumbsup")
+                            .foregroundColor(watchlistManager.isLiked(movie) ? .green : .white)
+                        Text("Like")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                }
+
+                Button(action: {
+                    watchlistManager.toggleDislike(for: movie)
+                }) {
+                    VStack {
+                        Image(systemName: watchlistManager.isDisliked(movie) ? "hand.thumbsdown.fill" : "hand.thumbsdown")
+                            .foregroundColor(watchlistManager.isDisliked(movie) ? .red : .white)
+                        Text("Dislike")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(12)
+
+
             VStack(spacing: 12) {
                 if let detailedMovie = detailedMovie {
                     // **Title**
@@ -88,6 +120,18 @@ struct MovieDetailView: View {
                     }
                     .padding(.top, 20)
                     .padding(.bottom, 20)
+                    .padding(.horizontal)
+                    
+                    Button(action: {
+                        watchlistManager.toggleWatched(for: movie)
+                    }) {
+                        Text(watchlistManager.isWatched(movie) ? "Mark as Unwatched" : "Mark as Watched")
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(watchlistManager.isWatched(movie) ? Color.gray : Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
                     .padding(.horizontal)
 
                     // **Movie Stats (Ratings, Release Date, Genres, Runtime)**
@@ -127,7 +171,6 @@ struct MovieDetailView: View {
                     .shadow(radius: 5)
                     .padding(.bottom, 25)
 
-                  
                     // **Watch Trailer Button**
                     if let key = trailerKey {
                         Text("🎬 Watch Trailer")
@@ -249,6 +292,7 @@ struct MovieDetailView: View {
                 fetchCast()
                 fetchSimilarMovies()
                 fetchStreamingProviders()
+                fetchTrailer()
             }
         }
         .background(Color.black.edgesIgnoringSafeArea(.all))
@@ -344,10 +388,6 @@ struct MovieDetailView: View {
 
 
 }
-
-
-import SwiftUI
-import WebKit
 
 struct TrailerView: View {
     var trailerKey: String

@@ -20,7 +20,7 @@ struct YouTubePlayerView: UIViewRepresentable {
     class Coordinator: NSObject, YTPlayerViewDelegate {
         func playerViewDidBecomeReady(_ playerView: YTPlayerView) {
             print("✅ YouTube Player is ready!")
-            playerView.playVideo() // ✅ Auto-Play
+            //playerView.playVideo() // ✅ Auto-Play
         }
 
         func playerView(_ playerView: YTPlayerView, didChangeTo state: YTPlayerState) {

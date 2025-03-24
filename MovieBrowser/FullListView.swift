@@ -5,10 +5,32 @@ struct FullListView: View {
     let title: String
     @State private var items: [Movie] = []
     @State private var searchText = ""
+    @State private var hasLoaded = false
+    @State private var selectedFilter: ContentView.BrowseFilter = .all
+    @EnvironmentObject var watchlistManager: WatchlistManager
 
     var filteredItems: [Movie] {
-        searchText.isEmpty ? items : items.filter { $0.displayTitle.lowercased().contains(searchText.lowercased()) }
+        items.filter { movie in
+            let matchesSearch = searchText.isEmpty || movie.displayTitle.lowercased().contains(searchText.lowercased())
+
+            let matchesFilter: Bool
+            switch selectedFilter {
+            case .all:
+                matchesFilter = true
+            case .watched:
+                matchesFilter = watchlistManager.isWatched(movie)
+            case .unwatched:
+                matchesFilter = !watchlistManager.isWatched(movie)
+            case .liked:
+                matchesFilter = watchlistManager.isLiked(movie)
+            case .disliked:
+                matchesFilter = watchlistManager.isDisliked(movie)
+            }
+
+            return matchesSearch && matchesFilter
+        }
     }
+
 
     var body: some View {
         VStack {
@@ -18,36 +40,29 @@ struct FullListView: View {
                 .background(Color(.systemGray6))
                 .cornerRadius(10)
                 .padding(.horizontal)
+            
+            // **Filter Picker**
+            HStack(alignment: .center) {
+                Text("Filter:")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, -15)
+                Picker("Filter", selection: $selectedFilter) {
+                    ForEach(ContentView.BrowseFilter.allCases, id: \.self) { filter in
+                            Text(filter.rawValue)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 47)
 
             // **Full List of Movies/TV Shows**
             ScrollView {
                 LazyVStack(spacing: 20) {
                     ForEach(filteredItems) { item in
                         NavigationLink(destination: MovieDetailView(movie: item)) {
-                            HStack {
-                                if let posterURL = item.posterURL {
-                                    AsyncImage(url: posterURL) { image in
-                                        image.resizable()
-                                            .scaledToFit()
-                                            .frame(width: 80, height: 120)
-                                            .cornerRadius(8)
-                                    } placeholder: {
-                                        Rectangle()
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 80, height: 120)
-                                            .cornerRadius(8)
-                                    }
-                                }
-
-                                Text(item.displayTitle)
-                                    .font(.headline)
-                                    .multilineTextAlignment(.leading)
-                                    .padding(.leading, 10)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(Color(.systemGray5))
-                            .cornerRadius(12)
+                            movieRowView(for: item)
                         }
                     }
                 }
@@ -56,7 +71,10 @@ struct FullListView: View {
         }
         .navigationTitle(title)
         .onAppear {
-            fetchData()
+            if !hasLoaded {
+                fetchData()
+                hasLoaded = true
+            }
         }
     }
 
@@ -109,5 +127,50 @@ struct FullListView: View {
             }
         }
     }
+    
+    @ViewBuilder
+    func movieRowView(for item: Movie) -> some View {
+        HStack {
+            if let posterURL = item.posterURL {
+                AsyncImage(url: posterURL) { image in
+                    image.resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 120)
+                        .cornerRadius(8)
+                } placeholder: {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 80, height: 120)
+                        .cornerRadius(8)
+                }
+            }
 
+            VStack(alignment: .leading, spacing: 5) {
+                Text(item.displayTitle)
+                    .font(.headline)
+                    .multilineTextAlignment(.leading)
+
+                if watchlistManager.isWatched(item) {
+                    Text("Watched")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                } else if watchlistManager.isLiked(item) {
+                    Text("Liked")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                } else if watchlistManager.isDisliked(item) {
+                    Text("Disliked")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+            }
+            .padding(.leading, 10)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(.systemGray5))
+        .cornerRadius(12)
+    }
 }
