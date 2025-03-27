@@ -10,7 +10,6 @@ struct FullListView: View {
     @EnvironmentObject var watchlistManager: WatchlistManager
     @Environment(\.colorScheme) var colorScheme
 
-
     var filteredItems: [Movie] {
         items.filter { movie in
             let matchesSearch = searchText.isEmpty || movie.displayTitle.lowercased().contains(searchText.lowercased())
@@ -33,62 +32,60 @@ struct FullListView: View {
         }
     }
 
-
     var body: some View {
-        VStack {
-            // **Search Bar for "See More" Page**
-            TextField("Search \(title)...", text: $searchText)
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
-                .padding(.horizontal)
-            
-            // **Filter Picker**
-            HStack(alignment: .center) {
-                Text("Filter:")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, -15)
-                Picker("Filter", selection: $selectedFilter) {
-                    ForEach(ContentView.BrowseFilter.allCases, id: \.self) { filter in
+        NavigationStack {
+            VStack {
+                // Search Bar
+                TextField("Search \(title)...", text: $searchText)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                
+                // Filter Picker
+                HStack(alignment: .center) {
+                    Text("Filter:")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, -15)
+                    Picker("Filter", selection: $selectedFilter) {
+                        ForEach(ContentView.BrowseFilter.allCases, id: \.self) { filter in
                             Text(filter.rawValue)
-                    }
-                }
-                .pickerStyle(MenuPickerStyle())
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 47)
-
-            // **Full List of Movies/TV Shows**
-            ScrollView {
-                LazyVStack(spacing: 20) {
-                    ForEach(filteredItems) { item in
-                        NavigationLink(destination: MovieDetailView(movie: item)) {
-                            movieRowView(for: item)
                         }
                     }
+                    .pickerStyle(MenuPickerStyle())
                 }
-                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 47)
+
+                // Movie List
+                ScrollView {
+                    LazyVStack(spacing: 20) {
+                        ForEach(filteredItems) { item in
+                            NavigationLink(destination: MovieDetailView(movie: item)) {
+                                movieRowView(for: item)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
             }
-        }
-        .navigationTitle(title)
-        .onAppear {
-            if !hasLoaded {
-                fetchData()
-                hasLoaded = true
+            .navigationTitle(title)
+            .onAppear {
+                if !hasLoaded {
+                    fetchData()
+                    hasLoaded = true
+                }
             }
         }
     }
 
-    // **Fetch Data for "See More" Page**
     func fetchData() {
         let apiKey = "2cbd04c2dac25629f413b3b7d5feef97"
-        var fetchedItems = [Int: Movie]() // ✅ Ensure uniqueness
+        var fetchedItems = [Int: Movie]()
         let dispatchGroup = DispatchGroup()
-        
-        // **Determine which API categories to fetch based on title**
+
         let categories: [String]
-        
         if category == "all_movies" {
             categories = ["movie/popular", "movie/now_playing", "movie/top_rated", "movie/upcoming", "trending/movie/week"]
         } else if category == "all_tv" {
@@ -98,20 +95,19 @@ struct FullListView: View {
         }
 
         for cat in categories {
-            for page in 1...5 { // ✅ Fetch up to 5 pages per category
+            for page in 1...5 {
                 let urlString = "https://api.themoviedb.org/3/\(cat)?api_key=\(apiKey)&language=en-US&page=\(page)"
                 guard let url = URL(string: urlString) else { continue }
 
                 dispatchGroup.enter()
-                URLSession.shared.dataTask(with: url) { data, response, error in
+                URLSession.shared.dataTask(with: url) { data, _, _ in
                     defer { dispatchGroup.leave() }
-
                     if let data = data {
                         do {
-                            let decodedResponse = try JSONDecoder().decode(MovieResponse.self, from: data)
+                            let decoded = try JSONDecoder().decode(MovieResponse.self, from: data)
                             DispatchQueue.main.async {
-                                for movie in decodedResponse.results {
-                                    fetchedItems[movie.id] = movie // ✅ Store uniquely by ID
+                                for movie in decoded.results {
+                                    fetchedItems[movie.id] = movie
                                 }
                             }
                         } catch {
@@ -123,13 +119,11 @@ struct FullListView: View {
         }
 
         dispatchGroup.notify(queue: .main) {
-            DispatchQueue.main.async {
-                self.items = Array(fetchedItems.values).sorted(by: { ($0.title ?? "") < ($1.title ?? "") })
-                print("✅ Loaded \(self.items.count) items for \(category)")
-            }
+            self.items = Array(fetchedItems.values).sorted(by: { ($0.popularity ?? 0) > ($1.popularity ?? 0) })
+            print("✅ Loaded \(self.items.count) unique items for \(category)")
         }
     }
-    
+
     @ViewBuilder
     func movieRowView(for item: Movie) -> some View {
         HStack {
@@ -149,8 +143,7 @@ struct FullListView: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(item.displayTitle)
-                    .font(.system(size: 20, weight: .bold, design: .default))
-                    .multilineTextAlignment(.leading)
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundColor(colorScheme == .dark ? .white : .black)
 
                 if watchlistManager.isWatched(item) {
@@ -176,5 +169,4 @@ struct FullListView: View {
         .background(Color(.systemGray5))
         .cornerRadius(12)
     }
-
 }
